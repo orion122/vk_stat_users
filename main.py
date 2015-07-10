@@ -7,7 +7,7 @@ group_id = '67824212'
 
 offset = 0
 max_offset = 1000
-fields = 'bdate,sex,city,country,online,online_mobile,education,school,status'
+fields = 'bdate,sex,city,country,online,online_mobile,education,status'
 
 #num of members
 url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}'.format(group_id)
@@ -22,11 +22,13 @@ else:
 
 all_members = []
 for i in range(num_iters):
-    url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}'.format(group_id, offset)
-    response_url_members = urllib.urlopen(url_members)
-    members = json.loads(response_url_members.read())['response']['users']
+    url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}&fields={2}'.format(group_id, offset, fields)
+    for j in range(max_offset-1):
+        response_url_members = urllib.urlopen(url_members)
+        members = json.loads(response_url_members.read())['response']['users'][j]
+        print j, members.get('university_name')
     offset+=max_offset
-    all_members.extend(members)
-    print(i, members)
+    #all_members.extend(members)
+    #print members
 
-print(len(all_members), all_members)
+#print(len(all_members), all_members)
