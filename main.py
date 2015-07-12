@@ -25,7 +25,6 @@ for i in range(num_iters):
     url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}&fields={2}'.format(group_id, offset, fields)
     response_url_members = urllib.urlopen(url_members)
     members = json.loads(response_url_members.read())['response']['users']
-    for j in range(num_members):
-        print j, members[j].get('university_name')
+    for member in members:
+        print member.get('uid'), member.get('university_name')
     offset+=max_offset
-    #print members
