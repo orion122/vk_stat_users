@@ -9,13 +9,10 @@ import MySQLdb
 db = MySQLdb.connect('localhost', msql_user_name, msql_user_pass, 'vk_stat')
 db.set_character_set('utf8')
 cursor = db.cursor()
-#cursor.execute('SET NAMES utf8;')
-cursor.execute('SET CHARACTER SET utf8;')
-#cursor.execute('SET character_set_connection=utf8;')
 
 #group_id = '24098940'
-group_id = '67824212'
-#group_id = '59142119'
+#group_id = '67824212'#128
+group_id = '59142119'#1072
 
 offset = 0
 max_offset = 1000
@@ -38,22 +35,33 @@ for i in range(num_iters):
     response_url_members = urllib.urlopen(url_members)
     members = json.loads(response_url_members.read())['response']['users']
     for member in members:
-        '''
-        insert = "INSERT INTO vk_stat_02 ('count_members', 'uid', 'sex', 'first_name', 'last_name', 'bdate', 'country', 'city', 'online', 'online_mobile', 'university_name', 'status') " \
-         "VALUES ('%d', '%d', '%d', '%s', '%s', '%s', '%d, '%d', '%d','%d','%s','%s')" % \
-                 (count_members, member.get('uid'), member.get('sex'), member.get('first_name'), member.get('last_name'), member.get('bdate'), member.get('country'), member.get('city'), member.get('online'), member.get('online_mobile'), member.get('university_name'), member.get('status'))
-        '''
-        insert = "INSERT INTO vk_stat (count_members, uid, sex, first_name) " \
-                 "VALUES ('%d', '%d', '%d', '%s')" % \
-                 (count_members, member.get('uid'), member.get('sex'), member.get('first_name'))
+        #uni before '\n'
+        uni = member.get('university_name')
+        if member.get('university_name'):
+            uni = member.get('university_name')[:10]
+            if uni.find('\n'):
+                uni = uni[:uni.find('\n')-1]
+
+        insert = "INSERT INTO vk_stat (count_members, uid, sex, first_name, last_name, bdate, country, city, online, online_mobile, university_name) " \
+                 "VALUES ('%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')" % \
+                 (count_members, member.get('uid'), member.get('sex'), member.get('first_name'), member.get('last_name'), member.get('bdate'), member.get('country'), member.get('city'), member.get('online'), member.get('online_mobile'), uni)#, member.get('status'))
         try:
             cursor.execute(insert)
             db.commit()
         except:
             db.rollback()
             print('Error')
-        print(count_members, member.get('first_name'))
+        print (count_members, member.get('uid'))
         count_members+=1
     offset+=max_offset
-
+'''
+try:
+    cursor.execute('select * from vk_stat')
+    read_table = cursor.fetchall()
+    for line in read_table:
+        print(line[10])
+    print 'Line count = ', cursor.rowcount
+except:
+    print 'Error'
+'''
 db.close()
