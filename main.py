@@ -1,18 +1,13 @@
 __author__ = 'eq'
-# -*- coding: utf-8 -*-
+# -*- coding: UTF-8 -*-
 import urllib, json
 import sys
-sys.path.append('/home/eq/PycharmProjects/00_pass')
-from logpass import msql_user_name, msql_user_pass
-import MySQLdb
+import collections
 
-db = MySQLdb.connect('localhost', msql_user_name, msql_user_pass, 'vk_stat')
-db.set_character_set('utf8')
-cursor = db.cursor()
-
-#group_id = '24098940'
+#group_id = '24098940'#77000
 #group_id = '67824212'#128
-group_id = '59142119'#1072
+#group_id = '59142119'#1072
+group_id = '60305152'#2400
 
 offset = 0
 max_offset = 1000
@@ -30,38 +25,128 @@ else:
     num_iters = num_members/max_offset + 1
 
 count_members = 1
+first_names = []
+last_names = []
+countries = []
+cities = []
+years = []
+man, woman = 0, 0
+
 for i in range(num_iters):
     url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}&fields={2}'.format(group_id, offset, fields)
     response_url_members = urllib.urlopen(url_members)
     members = json.loads(response_url_members.read())['response']['users']
-    for member in members:
-        #uni before '\n'
-        uni = member.get('university_name')
-        if member.get('university_name'):
-            uni = member.get('university_name')[:10]
-            if uni.find('\n'):
-                uni = uni[:uni.find('\n')-1]
 
-        insert = "INSERT INTO vk_stat (count_members, uid, sex, first_name, last_name, bdate, country, city, online, online_mobile, university_name) " \
-                 "VALUES ('%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')" % \
-                 (count_members, member.get('uid'), member.get('sex'), member.get('first_name'), member.get('last_name'), member.get('bdate'), member.get('country'), member.get('city'), member.get('online'), member.get('online_mobile'), uni)#, member.get('status'))
+    for member in members:
+        #bdate
+        if member.get('bdate') and len(member.get('bdate')) > 5:#if year exists
+            years.append(member.get('bdate')[-4:])
+
+        #first_names
+        first_names.append(member.get('first_name'))
+
+        #last_names
         try:
-            cursor.execute(insert)
-            db.commit()
+            if member.get('last_name')[-1] == u'а':
+                last_name = member.get('last_name')[:-1]
+            else:
+                last_name = member.get('last_name')
+            last_names.append(last_name)
         except:
-            db.rollback()
-            print('Error')
-        print (count_members, member.get('uid'))
+            pass
+
+        #sex
+        if member.get('sex') == 1:
+            woman += 1
+        elif member.get('sex') == 2:
+            man += 1
+
+        #countries and cites
+        countries.append(member.get('country'))
+        cities.append(member.get('city'))
+
         count_members+=1
     offset+=max_offset
-'''
-try:
-    cursor.execute('select * from vk_stat')
-    read_table = cursor.fetchall()
-    for line in read_table:
-        print(line[10])
-    print 'Line count = ', cursor.rowcount
-except:
-    print 'Error'
-'''
-db.close()
+
+
+#------sex-----------------------------------------------------
+print('-----------sex--------------')
+print 'man: ', man, '\nwoman: ', woman
+
+
+#-----------------first_names-----------------------------------
+print('-----------first_names--------------')
+#sorting dict
+fr_first_names = collections.Counter()
+for name in first_names:
+    fr_first_names[name]+=1
+
+list_fr_first_names = fr_first_names.items()
+
+#sorting list
+list_fr_first_names.sort(key=lambda item: item[1], reverse=True)
+for item in list_fr_first_names:
+    if item[1] > 15:
+        print item[1], item[0]
+
+
+#-----------last_names------------------------------------------
+print('-----------last_names--------------')
+fr_last_names = collections.Counter()
+for l_name in last_names:
+    fr_last_names[l_name]+=1
+
+list_fr_last_names = fr_last_names.items()
+
+list_fr_last_names.sort(key=lambda item: item[1], reverse=True)
+for item in list_fr_last_names:
+    if item[1] > 15:
+        print item[1], item[0]
+
+
+#-----------years------------------------------------------------
+print('-----------years--------------')
+fr_years = collections.Counter()
+for year in years:
+    fr_years[year]+=1
+
+list_fr_years = fr_years.items()
+
+list_fr_years.sort(key=lambda item: item[1], reverse=True)
+for item in list_fr_years:
+    if item[1] > 15:
+        print item[1], item[0]
+
+
+#------countries-------------------------------------------------
+print('-----------countries--------------')
+fr_country = collections.Counter()
+for country in countries:
+    fr_country[country]+=1
+
+list_fr_country = fr_country.items()
+
+list_fr_country.sort(key=lambda item: item[1], reverse=True)
+for item in list_fr_country:
+    if item[1] > 50 and item[0] > 0:
+        url_country = 'https://api.vk.com/method/database.getCountriesById?country_ids={}'.format(item[0])
+        response_url_country = urllib.urlopen(url_country)
+        country = json.loads(response_url_country.read())['response'][0]['name']
+        print country, item[1]
+
+
+#------cities----------------------------------------------------
+print('-----------cities--------------')
+fr_cities = collections.Counter()
+for city in cities:
+    fr_cities[city]+=1
+
+list_fr_cities = fr_cities.items()
+
+list_fr_cities.sort(key=lambda item: item[1], reverse=True)
+for item in list_fr_cities:
+    if item[1] > 50 and item[0] > 0:
+        url_city = 'https://api.vk.com/method/database.getCitiesById?city_ids={}'.format(item[0])
+        response_url_city = urllib.urlopen(url_city)
+        city = json.loads(response_url_city.read())['response'][0]['name']
+        print city, item[1]
