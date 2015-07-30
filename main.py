@@ -71,8 +71,6 @@ for i in range(num_iters):
             statuses.append(member.get('status').lower())
         print count_members
 
-
-
         count_members+=1
 
 
@@ -160,10 +158,9 @@ for university in universities:
 
 list_fr_universities = fr_universities.items()
 
-#sorting list
 list_fr_universities.sort(key=lambda item: item[1], reverse=True)
 for item in list_fr_universities:
-    if item[1] > 10:
+    if item[1] > 20:
         print item[1], item[0]
 
 
@@ -174,7 +171,6 @@ for status in statuses:
 
 list_fr_statuses = fr_statuses.items()
 
-#sorting list
 list_fr_statuses.sort(key=lambda item: item[1], reverse=True)
 for item in list_fr_statuses:
     if item[1] > 5:
@@ -191,7 +187,7 @@ for word in statuses_words_split:
 
 list_fr_statuses_words = fr_statuses_words.items()
 
-#sorting list
+
 list_fr_statuses_words.sort(key=lambda item: item[1], reverse=True)
 for item in list_fr_statuses_words:
     if item[1] > 20:
