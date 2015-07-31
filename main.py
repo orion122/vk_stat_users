@@ -3,9 +3,9 @@ __author__ = 'eq'
 import urllib, json
 import collections
 
-group_id = '24098940'#77000
+#group_id = '24098940'#77000
 #group_id = '67824212'#128
-#group_id = '59142119'#1072
+group_id = '59142119'#1072
 #group_id = '60305152'#2400
 
 fw = open('statistics.txt', 'w')
@@ -101,11 +101,10 @@ def counting_statistic(statistics_name, value, overlap, vk_db='', ids=''):
     print_results_to_file(statistics_name)
 
     for item in list_from_dict:
-        if vk_db == '':
-            if item[1] > overlap:
+        if item[1] > overlap:
+            if vk_db == '':
                 print_results_to_file(str(item[1]) + ' ' + item[0].encode('utf-8'))
-        else:
-            if item[1] > overlap:
+            else:
                 tmp = value_by_id(vk_db, ids, item[0])
                 print_results_to_file(str(item[1]) + ' ' + tmp.encode('utf-8'))
 
