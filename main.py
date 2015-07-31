@@ -3,10 +3,17 @@ __author__ = 'eq'
 import urllib, json
 import collections
 
-#group_id = '24098940'#77000
+group_id = '24098940'#77000
 #group_id = '67824212'#128
-group_id = '59142119'#1072
+#group_id = '59142119'#1072
 #group_id = '60305152'#2400
+
+fw = open('statistics.txt', 'w')
+url_group = 'https://api.vk.com/method/groups.getById?group_id={}'.format(group_id)
+response_url_members = urllib.urlopen(url_group)
+groups_name = json.loads(response_url_members.read())['response'][0]['name']
+fw.write(groups_name.encode('utf-8'))
+fw.close()
 
 offset = 0
 max_offset = 1000
@@ -59,9 +66,13 @@ for i in range(num_iters):
         elif member.get('sex') == 2:
             man += 1
 
-        #countries and cites
-        countries.append(member.get('country'))
-        cities.append(member.get('city'))
+        #countries
+        if member.get('country'):
+            countries.append(member.get('country'))
+
+        #cites
+        if member.get('city'):
+            cities.append(member.get('city'))
 
         #universities
         if member.get('university_name'):
@@ -80,7 +91,7 @@ def print_results_to_file(data):
     fw.write(data)
     fw.close()
 
-def counting_statistic(statistics_name, value, overlap):
+def counting_statistic(statistics_name, value, overlap, vk_db='', ids=''):
     stat_dict = collections.Counter()
     for i in value:
         stat_dict[i] += 1
@@ -90,16 +101,30 @@ def counting_statistic(statistics_name, value, overlap):
     print_results_to_file(statistics_name)
 
     for item in list_from_dict:
-        if item[1] > overlap:
-            print_results_to_file(str(item[1]) + ' ' + item[0].encode('utf-8'))
+        if vk_db == '':
+            if item[1] > overlap:
+                print_results_to_file(str(item[1]) + ' ' + item[0].encode('utf-8'))
+        else:
+            if item[1] > overlap:
+                tmp = value_by_id(vk_db, ids, item[0])
+                print_results_to_file(str(item[1]) + ' ' + tmp.encode('utf-8'))
 
-overlap_first_names = 10
-overlap_last_names = 10
-overlap_years = 10
+def value_by_id(vk_db, ids, id):
+    response_url = urllib.urlopen('https://api.vk.com/method/database.{}?{}={}'.format(vk_db, ids, id))
+    value = json.loads(response_url.read())['response'][0]['name']
+    return value
+
+overlap_first_names = 15
+overlap_last_names = 15
+overlap_years = 30
 overlap_universities = 10
-overlap_statuses = 2
-overlap_statuses_words = 20
-print_results_to_file('man: ' + str(man) + '\nwoman: ' + str(woman))
+overlap_statuses = 3
+overlap_statuses_words = 50
+overlap_countries = 10
+overlap_cities = 30
+
+print_results_to_file('\n\nman: ' + str(man) + '\nwoman: ' + str(woman))
+
 counting_statistic('\n-----first_names-----', first_names, overlap_first_names)
 counting_statistic('\n-----last_names-----', last_names, overlap_last_names)
 counting_statistic('\n-----years-----', years, overlap_years)
@@ -110,127 +135,5 @@ statuses_words = ' '.join(statuses)
 statuses_words_split = statuses_words.split()
 counting_statistic('\n-----statuses_words-----', statuses_words_split, overlap_statuses_words)
 
-
-'''
-print('-----------sex--------------')
-print 'man: ', man, '\nwoman: ', woman
-
-
-print('-----------first_names--------------')
-#sorting dict
-fr_first_names = collections.Counter()
-for name in first_names:
-    fr_first_names[name]+=1
-
-list_fr_first_names = fr_first_names.items()
-
-#sorting list
-list_fr_first_names.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_first_names:
-    if item[1] > 100:
-        print item[1], item[0]
-
-
-print('-----------last_names--------------')
-fr_last_names = collections.Counter()
-for l_name in last_names:
-    fr_last_names[l_name]+=1
-
-list_fr_last_names = fr_last_names.items()
-
-list_fr_last_names.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_last_names:
-    if item[1] > 100:
-        print item[1], item[0]
-
-
-print('-----------years--------------')
-fr_years = collections.Counter()
-for year in years:
-    fr_years[year]+=1
-
-list_fr_years = fr_years.items()
-
-list_fr_years.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_years:
-    if item[1] > 100:
-        print item[1], item[0]
-
-
-print('-----------countries--------------')
-fr_country = collections.Counter()
-for country in countries:
-    fr_country[country]+=1
-
-list_fr_country = fr_country.items()
-
-list_fr_country.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_country:
-    if item[1] > 50 and item[0] > 0:
-        url_country = 'https://api.vk.com/method/database.getCountriesById?country_ids={}'.format(item[0])
-        response_url_country = urllib.urlopen(url_country)
-        country = json.loads(response_url_country.read())['response'][0]['name']
-        print item[1], country
-
-
-print('-----------cities--------------')
-fr_cities = collections.Counter()
-for city in cities:
-    fr_cities[city]+=1
-
-list_fr_cities = fr_cities.items()
-
-list_fr_cities.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_cities:
-    if item[1] > 75 and item[0] > 0:
-        url_city = 'https://api.vk.com/method/database.getCitiesById?city_ids={}'.format(item[0])
-        response_url_city = urllib.urlopen(url_city)
-        city = json.loads(response_url_city.read())['response'][0]['name']
-        print item[1], city
-
-
-print('-----------universities--------------')
-fr_universities = collections.Counter()
-for university in universities:
-    fr_universities[university]+=1
-
-list_fr_universities = fr_universities.items()
-
-list_fr_universities.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_universities:
-    if item[1] > 20:
-        print item[1], item[0]
-
-
-print('-----------statuses--------------')
-fr_statuses = collections.Counter()
-for status in statuses:
-    fr_statuses[status]+=1
-
-list_fr_statuses = fr_statuses.items()
-
-list_fr_statuses.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_statuses:
-    if item[1] > 5:
-        print item[1], item[0]
-
-
-print('-----------statuses_words--------------')
-statuses_words = ' '.join(statuses)
-statuses_words_split = statuses_words.split()
-
-fr_statuses_words = collections.Counter()
-for word in statuses_words_split:
-    fr_statuses_words[word]+=1
-
-list_fr_statuses_words = fr_statuses_words.items()
-
-
-list_fr_statuses_words.sort(key=lambda item: item[1], reverse=True)
-for item in list_fr_statuses_words:
-    if item[1] > 10:
-        #print item[1], item[0]
-        print_results_to_file(item[1], item[0])
-
-
-'''
+counting_statistic('\n-----countries-----', countries, overlap_countries, vk_db='getCountriesById', ids='country_ids')
+counting_statistic('\n-----cities-----', cities, overlap_cities, vk_db='getCitiesById', ids='city_ids')
