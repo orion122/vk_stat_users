@@ -23,7 +23,7 @@ if num_members%max_offset == 0:
 else:
     num_iters = num_members/max_offset + 1
 
-count_members = 1
+user_number = 1
 first_names = []
 last_names = []
 countries = []
@@ -63,17 +63,55 @@ for i in range(num_iters):
         countries.append(member.get('country'))
         cities.append(member.get('city'))
 
-        #university
-        universities.append(member.get('university_name'))
+        #universities
+        if member.get('university_name'):
+            universities.append(member.get('university_name'))
 
         #statuses
         if member.get('status'):
             statuses.append(member.get('status').lower())
-        print count_members
 
-        count_members+=1
+        print(user_number)
+        user_number+=1
+
+def print_results_to_file(data):
+    data = data + '\n'
+    fw = open('statistics.txt', 'a')
+    fw.write(data)
+    fw.close()
+
+def counting_statistic(statistics_name, value, overlap):
+    stat_dict = collections.Counter()
+    for i in value:
+        stat_dict[i] += 1
+
+    list_from_dict = stat_dict.items()
+    list_from_dict.sort(key=lambda item: item[1], reverse=True)
+    print_results_to_file(statistics_name)
+
+    for item in list_from_dict:
+        if item[1] > overlap:
+            print_results_to_file(str(item[1]) + ' ' + item[0].encode('utf-8'))
+
+overlap_first_names = 10
+overlap_last_names = 10
+overlap_years = 10
+overlap_universities = 10
+overlap_statuses = 2
+overlap_statuses_words = 20
+print_results_to_file('man: ' + str(man) + '\nwoman: ' + str(woman))
+counting_statistic('\n-----first_names-----', first_names, overlap_first_names)
+counting_statistic('\n-----last_names-----', last_names, overlap_last_names)
+counting_statistic('\n-----years-----', years, overlap_years)
+counting_statistic('\n-----universities-----', universities, overlap_universities)
+counting_statistic('\n-----statuses-----', statuses, overlap_statuses)
+
+statuses_words = ' '.join(statuses)
+statuses_words_split = statuses_words.split()
+counting_statistic('\n-----statuses_words-----', statuses_words_split, overlap_statuses_words)
 
 
+'''
 print('-----------sex--------------')
 print 'man: ', man, '\nwoman: ', woman
 
@@ -190,5 +228,9 @@ list_fr_statuses_words = fr_statuses_words.items()
 
 list_fr_statuses_words.sort(key=lambda item: item[1], reverse=True)
 for item in list_fr_statuses_words:
-    if item[1] > 20:
-        print item[1], item[0]
+    if item[1] > 10:
+        #print item[1], item[0]
+        print_results_to_file(item[1], item[0])
+
+
+'''
