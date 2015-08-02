@@ -1,17 +1,20 @@
 __author__ = 'eq'
 # -*- coding: UTF-8 -*-
-import urllib, json
+import urllib2, json
 import collections
+from multiprocessing.dummy import Pool as ThreadPool
+
+pool = ThreadPool(16)
 
 #group_id = '24098940'#77000
 #group_id = '67824212'#128
-#group_id = '92410277'#23
+group_id = '92410277'#23
 #group_id = '59142119'#1072
-group_id = '60305152'#2400
+#group_id = '60305152'#2400
 
 fw = open('statistics.txt', 'w')
 url_group = 'https://api.vk.com/method/groups.getById?group_id={}'.format(group_id)
-response_url_members = urllib.urlopen(url_group)
+response_url_members = urllib2.urlopen(url_group)
 groups_name = json.loads(response_url_members.read())['response'][0]['name']
 fw.write(groups_name.encode('utf-8'))
 fw.close()
@@ -22,7 +25,7 @@ fields = 'bdate,sex,city,country,online,online_mobile,education,status'
 
 #num of members
 url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}'.format(group_id)
-response_url_members = urllib.urlopen(url_members)
+response_url_members = urllib2.urlopen(url_members)
 num_members = json.loads(response_url_members.read())['response']['count']
 
 #num of iters
@@ -40,17 +43,20 @@ years = []
 universities = []
 statuses = []
 clubs = []
+url_members_subs_list = []
+member_subs = []
 man, woman = 0, 0
 user_number_in_clubs = 1
 
 for i in range(num_iters):
     url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}&fields={2}'.format(group_id, i*max_offset, fields)
-    response_url_members = urllib.urlopen(url_members)
+    response_url_members = urllib2.urlopen(url_members)
     members = json.loads(response_url_members.read())['response']['users']
 
+    '''
     for member in members:
         url_members_subs = 'https://api.vk.com/method/users.getSubscriptions?user_id={}'.format(member.get('uid'))
-        response_url_members_subs = urllib.urlopen(url_members_subs)
+        response_url_members_subs = urllib2.urlopen(url_members_subs)
         members_subs = json.loads(response_url_members_subs.read())['response']['groups']['items']
         clubs += members_subs#.append(' '.join(str(i) for i in members_subs))
         print user_number_in_clubs#, members_subs
@@ -58,6 +64,21 @@ for i in range(num_iters):
 
     for i in range(len(clubs)):
         clubs[i] = str(clubs[i])
+        '''
+    for member in members:
+        url_members_subs_list.append('https://api.vk.com/method/users.getSubscriptions?user_id={}'.format(member.get('uid')))
+
+    response_url_members_subs_list = pool.map(urllib2.urlopen, url_members_subs_list)
+
+    for i in response_url_members_subs_list:
+        for response_url_members_subs in i:
+            members_response = json.loads(response_url_members_subs)
+            member_subs = members_response['response']['groups']['items']
+            for s in member_subs:
+                clubs.append(str(s))
+            #clubs.append(str(subs) for subs in member_subs)
+    print clubs
+
 
 
     for member in members:
@@ -126,7 +147,7 @@ def counting_statistic(statistics_name, value, overlap, vk_db='', ids=''):
                 print_results_to_file(str(item[1]) + ' ' + tmp.encode('utf-8'))
 
 def value_by_id(vk_db, ids, id):
-    response_url = urllib.urlopen('https://api.vk.com/method/database.{}?{}={}'.format(vk_db, ids, id))
+    response_url = urllib2.urlopen('https://api.vk.com/method/database.{}?{}={}'.format(vk_db, ids, id))
     value = json.loads(response_url.read())['response'][0]['name']
     return value
 
@@ -154,6 +175,5 @@ counting_statistic('\n-----statuses_words-----', statuses_words_split, overlap_s
 counting_statistic('\n-----countries-----', countries, overlap_countries, vk_db='getCountriesById', ids='country_ids')
 counting_statistic('\n-----cities-----', cities, overlap_cities, vk_db='getCitiesById', ids='city_ids')
 
-overlap_clubs = 400
+overlap_clubs = 10
 counting_statistic('\n-----clubs-----', clubs, overlap_clubs)
-
