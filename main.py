@@ -4,6 +4,7 @@ import urllib, json
 import collections
 from multiprocessing.dummy import Pool as ThreadPool
 
+#num of threads for open urls
 pool = ThreadPool(8)
 
 group_id = '24098940'#77000
@@ -11,10 +12,11 @@ group_id = '24098940'#77000
 #group_id = '92410277'#23
 #group_id = '59142119'#1072
 #group_id = '60305152'#2400
-#group_id = '19514611'#4200
+group_id = '19514611'#4200
 #group_id = '55206520'#12000
 #group_id = '47022752'#36000
 
+#write group name to file
 fw = open('statistics.txt', 'w')
 url_group = 'https://api.vk.com/method/groups.getById?group_id={}'.format(group_id)
 response_url_members = urllib.urlopen(url_group)
@@ -22,9 +24,8 @@ groups_name = json.loads(response_url_members.read())['response'][0]['name']
 fw.write(groups_name.encode('utf-8'))
 fw.close()
 
-offset = 0
 max_offset = 1000
-fields = 'bdate,sex,city,country,online,online_mobile,education,status'
+fields = 'bdate,sex,city,country,education,status'
 
 #num of members
 url_members = 'https://api.vk.com/method/groups.getMembers?group_id={0}'.format(group_id)
@@ -38,6 +39,7 @@ else:
     num_iters = num_members/max_offset + 1
 
 user_number = 1
+man, woman = 0, 0
 first_names = []
 last_names = []
 countries = []
@@ -46,18 +48,19 @@ years = []
 universities = []
 statuses = []
 urls_members = []
-man, woman = 0, 0
-user_number_in_clubs = 1
 
+#write all urls to list
 for i in range(num_iters):
     urls_members.append('https://api.vk.com/method/groups.getMembers?group_id={0}&offset={1}&fields={2}'.format(group_id, i*max_offset, fields))
 
+#open all urls and get responses
 response_url_members_list = pool.map(urllib.urlopen, urls_members)
 
+#read all json_responses and get users info
 for response_members in response_url_members_list:
     members = json.loads(response_members.read())['response']['users']
-    
 
+    #get year, first and last names, sex, country and city and add to lists
     for member in members:
         #years
         if member.get('bdate') and len(member.get('bdate')) > 5:#if year exists
@@ -98,12 +101,14 @@ for response_members in response_url_members_list:
         print(user_number)
         user_number+=1
 
+#def for print results to file
 def print_results_to_file(data):
     data = data + '\n'
     fw = open('statistics.txt', 'a')
     fw.write(data)
     fw.close()
 
+#def for find overlaps and sort
 def counting_statistic(statistics_name, value, overlap, vk_db='', ids=''):
     stat_dict = collections.Counter()
     for i in value:
@@ -121,19 +126,20 @@ def counting_statistic(statistics_name, value, overlap, vk_db='', ids=''):
                 tmp = value_by_id(vk_db, ids, item[0])
                 print_results_to_file(str(item[1]) + ' ' + tmp.encode('utf-8'))
 
+#def for find country or city by ID
 def value_by_id(vk_db, ids, id):
     response_url = urllib.urlopen('https://api.vk.com/method/database.{}?{}={}'.format(vk_db, ids, id))
     value = json.loads(response_url.read())['response'][0]['name']
     return value
 
-overlap_first_names = 300
-overlap_last_names = 300
-overlap_years = 300
-overlap_universities = 300
-overlap_statuses = 300
-overlap_statuses_words = 500
-overlap_countries = 300
-overlap_cities = 300
+overlap_first_names = 50
+overlap_last_names = 50
+overlap_years = 100
+overlap_universities = 50
+overlap_statuses = 20
+overlap_statuses_words = 150
+overlap_countries = 100
+overlap_cities = 70
 
 print_results_to_file('\n\nman: ' + str(man) + '\nwoman: ' + str(woman))
 
